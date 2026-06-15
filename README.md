@@ -17,10 +17,31 @@ two without normalizing incomparable scores.
 
 ## Install
 
+**Global install (recommended)** — puts `recall` and `recall-mcp` on your PATH so
+they work from any directory, no `cd` and no `uv run`:
+
+```bash
+# from a clean checkout (any machine)
+uv tool install git+https://github.com/jabertuhin/recall
+
+# or editable from a local clone (your edits reflect live)
+uv tool install -e /path/to/recall
+
+recall warmup   # pre-fetch the embedding model (one-time)
+recall init
+```
+
+`uv tool` installs into an isolated venv and symlinks the executables into
+`~/.local/bin` (run `uv tool update-shell` once if that dir isn't on your PATH).
+No-install alternatives: `uvx --from git+https://github.com/jabertuhin/recall recall <cmd>`
+(ephemeral) or `pipx install git+https://github.com/jabertuhin/recall`.
+
+**Dev / from source** (run against the working tree):
+
 ```bash
 cd recall
 uv sync                 # creates .venv, installs deps
-uv run recall warmup    # pre-fetch the embedding model (~130MB, first run only)
+uv run recall warmup    # pre-fetch the embedding model (one-time)
 uv run recall init
 ```
 
@@ -85,21 +106,25 @@ Two clones of the same repo therefore share a scope (same remote).
 
 ## MCP (agent integration)
 
-Register the server:
+With a global install (above), the server is just the `recall-mcp` binary on your
+PATH — no directory or `uv run` needed:
 
 ```bash
 # Claude Code
-claude mcp add recall -- uv run --directory /path/to/recall recall mcp
+claude mcp add recall -- recall-mcp
 ```
 
 ```jsonc
 // Codex / other MCP clients: ~/.codex/config.toml or client config
 {
   "mcpServers": {
-    "recall": { "command": "uv", "args": ["run", "--directory", "/path/to/recall", "recall", "mcp"] }
+    "recall": { "command": "recall-mcp" }
   }
 }
 ```
+
+Not installed globally? Use the ephemeral form instead:
+`{ "command": "uvx", "args": ["--from", "git+https://github.com/jabertuhin/recall", "recall-mcp"] }`.
 
 Tools exposed: `recall_issues(problem, scope?, k?)`,
 `save_resolution(title, symptom, root_cause, fix, context?, tags?, scope?)`,
