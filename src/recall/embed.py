@@ -2,15 +2,26 @@
 
 The model (``BAAI/bge-small-en-v1.5``, 384-dim) is lazy-loaded on first use and
 downloaded (~130MB) on first ever run. Use ``warmup()`` to pre-fetch.
+
+The cache dir is pinned to ``~/.recall/models`` (override with ``RECALL_MODEL_DIR``)
+rather than fastembed's default ``$TMPDIR/fastembed_cache`` — the temp default gets
+reaped by the OS, forcing silent re-downloads, which is especially bad on the MCP
+path where nobody runs ``warmup`` by hand.
 """
 
 from __future__ import annotations
 
+import os
 from functools import lru_cache
+from pathlib import Path
 
 from .models import EMBED_DIM
 
 MODEL_NAME = "BAAI/bge-small-en-v1.5"
+
+CACHE_DIR = Path(
+    os.environ.get("RECALL_MODEL_DIR", Path.home() / ".recall" / "models")
+)
 
 
 @lru_cache(maxsize=1)
@@ -19,7 +30,8 @@ def _model():
     # and don't pay the onnxruntime import cost.
     from fastembed import TextEmbedding
 
-    return TextEmbedding(model_name=MODEL_NAME)
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    return TextEmbedding(model_name=MODEL_NAME, cache_dir=str(CACHE_DIR))
 
 
 def embed(text: str) -> list[float]:

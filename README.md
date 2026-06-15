@@ -25,7 +25,11 @@ uv run recall init
 ```
 
 Embeddings: `fastembed` → `BAAI/bge-small-en-v1.5` (384-dim, ONNX, **no torch**),
-runs fully offline after the first download.
+runs fully offline after the first download. The model is cached in
+`~/.recall/models` (override with `RECALL_MODEL_DIR`) — a persistent dir, not
+fastembed's default `$TMPDIR` which the OS reaps. The MCP server warms the model
+in a background thread at startup, so the agent's first tool call doesn't block on
+the download; `recall warmup` is only needed if you want to pre-fetch for CLI use.
 
 ## CLI
 

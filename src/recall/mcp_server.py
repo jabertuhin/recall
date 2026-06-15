@@ -128,6 +128,14 @@ def mark_helpful(issue_id: int) -> dict:
 
 
 def main() -> None:
+    # Pull the ~130MB model off the hot path: download/load in the background at
+    # startup so the agent's first recall/save call doesn't block (and risk the
+    # MCP client's tool timeout) on a cold cache.
+    import threading
+
+    from . import embed
+
+    threading.Thread(target=embed.warmup, daemon=True).start()
     mcp.run()
 
 
