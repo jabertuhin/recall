@@ -54,9 +54,34 @@ recall list --status pending_review
 recall stats
 ```
 
-Scope: entries are tagged with the current repo (git remote → `org/repo`, else
-top-level dir name, else `global`). Searches default to **current repo + global**;
-`--all` widens to every scope. Override the store path with `RECALL_DB`.
+## Project separation (scope)
+
+Projects are separated **logically inside one shared SQLite file** — not a file
+per project. Every row carries a `scope` string, and isolation is enforced at
+query time by filtering on it.
+
+**How scope is derived** (in order):
+
+1. git `remote.origin.url` → normalized to `org/repo`
+2. else the git top-level directory name
+3. else `global` (outside any repo)
+
+Two clones of the same repo therefore share a scope (same remote).
+
+| Operation | Scope behavior |
+| --- | --- |
+| **Search** | current repo **+ `global`** (shared knowledge surfaces everywhere); `--all` widens to every scope |
+| **Dedup**  | exact scope only |
+| **Write**  | tagged with the derived scope unless `--scope` / the `scope` arg overrides it |
+
+- `global`-scoped entries **intentionally surface in every project's search** —
+  that's the cross-project knowledge channel. Add with `--scope global`.
+- For **hard physical isolation** (e.g. client repos that must never share
+  memory), point each at its own file via `RECALL_DB=/path/to/that-project.db` —
+  same binary, separate stores.
+- Edge case: a repo with **no remote** falls back to its directory name, so two
+  unrelated dirs sharing a name would collide into one scope. Set `--scope`
+  explicitly if that matters.
 
 ## MCP (agent integration)
 
