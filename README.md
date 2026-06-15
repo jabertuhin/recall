@@ -31,6 +31,14 @@ fastembed's default `$TMPDIR` which the OS reaps. The MCP server warms the model
 in a background thread at startup, so the agent's first tool call doesn't block on
 the download; `recall warmup` is only needed if you want to pre-fetch for CLI use.
 
+> **Note:** the background warmup only *starts* the download at boot — it doesn't
+> guarantee the model is ready. If the agent fires a tool call within the first
+> ~20s of the server starting (before the download finishes), that call still
+> blocks until the model is ready. The thread just means it's already downloading
+> rather than starting cold, turning a guaranteed first-call stall into one that
+> only happens if you're very fast off the line — and only once per machine. For a
+> hard guarantee, run `recall warmup` once as a post-install step.
+
 ## CLI
 
 ```bash
